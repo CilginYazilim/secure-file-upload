@@ -1,0 +1,62 @@
+# =====================================================================
+#  YÜKLEME KLASÖRÜNDE KOD ÇALIŞTIRMAYI KAPATIR
+#  cilginyazilim.com – Güvenli Dosya Yükleme Sistemi
+# -----------------------------------------------------------------
+#  Bu proje MIME doğrulama, uzantı beyaz listesi ve rastgele
+#  isimlendirme ile "zararlı bir dosyanın buraya YAZILMASINI" zaten
+#  engeller (bkz. system/function.php store_upload()). Bu dosya ise
+#  SON ÇARE savunmadır: yukarıdaki katmanlardan biri atlatılıp bir
+#  ".php" dosyası buraya kaydedilse BİLE, Apache bu klasördeki hiçbir
+#  betiği ÇALIŞTIRMAZ — olsa olsa düz metin olarak indirilir.
+# =====================================================================
+
+# php_flag engine off: mod_php'nin bu klasörde PHP yorumlayıcısını
+# devre dışı bırakır. Bazı barındırma ortamlarında php_flag
+# desteklenmez; bu yüzden aşağıdaki FilesMatch kuralı da eklendi.
+php_flag engine off
+
+<IfModule mod_rewrite.c>
+    RewriteEngine Off
+</IfModule>
+
+# Herhangi bir betik uzantısına doğrudan erişimi reddet.
+<FilesMatch "\.(php|php3|php4|php5|php7|php8|phtml|phar|pl|py|cgi|asp|aspx|sh|shtml)$">
+    Require all denied
+</FilesMatch>
+
+# Klasör içeriğinin listelenmesini kapat: URL'yi tahmin edemeyen
+# birinin "hangi dosyalar var?" diye gezinmesini önler.
+Options -Indexes -ExecCGI
+
+# =====================================================================
+#  İÇERİK TÜRÜ TAHMİNİNİ (MIME SNIFFING) ENGELLE
+# ---------------------------------------------------------------------
+#  ÖLÇÜLMÜŞ BOŞLUK: system/download.php yanıtlarına "nosniff" ekliyordu
+#  AMA bu klasördeki dosyalara DOĞRUDAN erişimde (küçük resim
+#  önizlemeleri bu yolu kullanır) hiçbir güvenlik başlığı yoktu.
+#  Ölçüm: /uploads/x.gif isteği yalnızca "Content-Type: image/gif"
+#  döndürüyordu, X-Content-Type-Options YOKTU.
+#
+#  NEDEN ÖNEMLİ? Bazı tarayıcılar Content-Type'a rağmen içeriğe bakıp
+#  "bu aslında HTML" diye karar verebilir (MIME sniffing) ve dosyayı
+#  SAYFA OLARAK çalıştırabilir. Bu durumda içine HTML/JS gömülmüş bir
+#  "görsel", sitenin KENDİ alan adında JavaScript çalıştırır (depolanmış
+#  XSS) — oturum çerezleri o betiğe açık hâle gelir.
+#
+#  nosniff, tarayıcıya "Content-Type ne diyorsa odur, tahmin etme" der.
+# =====================================================================
+<IfModule mod_headers.c>
+    Header always set X-Content-Type-Options "nosniff"
+
+    # İkinci kemer: bu klasörden gelen bir yanıt her şeye rağmen HTML
+    # olarak yorumlanırsa bile, CSP script/eklenti çalıştırmayı ve
+    # dış kaynak çağırmayı yasaklar. sandbox ise dosyayı kaynaksız
+    # (origin'siz) bir kum havuzuna alır: çerezlere erişemez.
+    Header always set Content-Security-Policy "default-src 'none'; img-src 'self'; style-src 'unsafe-inline'; sandbox"
+
+    # Bu klasördeki hiçbir şey başka bir siteye çerçeve içinde gömülmesin.
+    Header always set X-Frame-Options "DENY"
+
+    # Dosya adları/başlıkları dış sitelere referans olarak sızmasın.
+    Header always set Referrer-Policy "no-referrer"
+</IfModule>

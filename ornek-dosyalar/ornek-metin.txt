@@ -1,0 +1,12 @@
+Çılgın Yazılım — Güvenli Dosya Yükleme Sistemi
+https://cilginyazilim.com
+
+Bu bir örnek metin dosyasıdır. Sürükle-bırak alanına bırakarak
+yükleme akışını deneyebilirsiniz.
+
+Dosya sunucuya ulaştığında:
+  1. İçeriğinden gerçek MIME türü tespit edilir (finfo)
+  2. Tür beyaz listeyle karşılaştırılır
+  3. Uzantı beyaz listeden TÜRETİLİR (dosya adından değil)
+  4. Rastgele bir ad verilir
+  5. uploads/document/YYYY/AA/ klasörüne yazılır

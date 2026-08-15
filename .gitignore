@@ -1,0 +1,39 @@
+# =====================================================================
+#  .gitignore – Git'in TAKİP ETMEYECEĞİ dosyalar
+# ---------------------------------------------------------------------
+#  YÜKLENEN DOSYALAR NEDEN REPODA YOK?
+#  Kurulum dosyası (cy_upload.sql) tabloları sıfırdan oluşturur. Eğer
+#  yüklenmiş dosyaları repoya koysaydık, projeyi yeni indiren birinde
+#  DİSKTE dosya olur ama VERİTABANINDA kaydı olmazdı — arayüz "hiç
+#  dosya yok" derken klasör dolu görünürdü. Bu tutarsızlığı önlemek
+#  için uploads/ içeriği hariç tutulur.
+#
+#  Denemek için hazır dosyalar "ornek-dosyalar/" klasöründedir; onları
+#  sürükle-bırak alanına bırakmanız yeterlidir (o klasör repoda VARDIR).
+# =====================================================================
+
+# --- Yüklenen dosyalar (klasör yapısı korunur, içerik korunmaz) ------
+uploads/*
+!uploads/.htaccess
+
+# --- Yerel ortam ayarları (şifre içerebilir, ASLA paylaşmayın) -------
+.env
+system/config.local.php
+
+# --- Editör ve işletim sistemi artıkları ----------------------------
+.vscode/
+.idea/
+*.swp
+*.swo
+Thumbs.db
+desktop.ini
+.DS_Store
+
+# --- Log ve geçici dosyalar -----------------------------------------
+*.log
+*.tmp
+*.bak
+
+# --- Bağımlılık klasörleri (bu projede kullanılmıyor) ---------------
+/vendor/
+/node_modules/

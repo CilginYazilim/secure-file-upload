@@ -1,0 +1,406 @@
+/* ==================================================================
+ *  SAYFAYA ÖZEL STİLLER
+ *  cilginyazilim.com – Güvenli Dosya Yükleme Sistemi
+ * ------------------------------------------------------------------
+ *  DİKKAT: Genel marka stilleri "cilginyazilim.css" dosyasındadır.
+ *
+ *  Yükleme sırası:
+ *    bootstrap.min.css  →  cilginyazilim.css  →  style.css
+ * ================================================================== */
+
+.container { max-width: 1100px; }
+
+
+/* --- Aynı gizli form-genişliği hatasına karşı, ileride bu projeye
+ * form-sarmalı bir modal eklenirse diye önceden düzeltilmiş
+ * (bkz. todo-drag-drop ve excel-import-export'taki aynı not). Bu
+ * projede henüz form-sarmalı modal yok ama kural gelecekte eklenecek
+ * her modal için geçerli olsun diye burada durur. --- */
+.cy-modal .modal-dialog > form {
+    width: 100%;
+}
+
+
+/* ==================================================================
+ *  SÜRÜKLE-BIRAK YÜKLEME ALANI
+ * ================================================================== */
+.cy-dropzone {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 2.5rem 1.5rem;
+    border: 2px dashed var(--cy-border);
+    border-radius: var(--cy-radius-lg);
+    background: var(--cy-surface-soft);
+    cursor: pointer;
+    transition: border-color .15s ease, background-color .15s ease;
+}
+
+.cy-dropzone:hover,
+.cy-dropzone:focus-visible {
+    border-color: var(--cy-brand-400);
+    background: var(--cy-brand-100);
+}
+
+.cy-dropzone:focus-visible {
+    outline: 2px solid var(--cy-brand-600);
+    outline-offset: 2px;
+}
+
+/* Sürüklenen dosya bu alanın ÜZERİNDEYKEN (henüz bırakılmadan) */
+.cy-dropzone--active {
+    border-color: var(--cy-brand-600);
+    background: var(--cy-brand-100);
+    border-style: solid;
+}
+
+.cy-dropzone__icon {
+    font-size: 2rem;
+    color: var(--cy-brand-500);
+    margin-bottom: .5rem;
+}
+
+.cy-dropzone__title {
+    font-weight: 700;
+    font-size: 1.05rem;
+}
+
+.cy-dropzone__hint {
+    font-size: .82rem;
+    color: var(--cy-text-muted);
+}
+
+
+/* ==================================================================
+ *  YÜKLEME KUYRUĞU (ilerleme çubukları)
+ * ================================================================== */
+.cy-upload-queue:not(:empty) {
+    margin-top: 1rem;
+    display: flex;
+    flex-direction: column;
+    gap: .5rem;
+}
+
+.cy-upload-row {
+    padding: .6rem .8rem;
+    border: 1px solid var(--cy-border);
+    border-radius: var(--cy-radius-sm);
+    background: var(--cy-surface);
+}
+
+.cy-upload-row__label {
+    display: block;
+    font-size: .82rem;
+    margin-bottom: .35rem;
+    color: var(--cy-text-muted);
+}
+
+.cy-upload-row__bar {
+    height: 6px;
+}
+
+
+/* ==================================================================
+ *  DOSYA IZGARASI
+ * ================================================================== */
+.cy-file-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    gap: 1rem;
+}
+
+.cy-file-grid__empty {
+    grid-column: 1 / -1;
+    padding: 2rem;
+    text-align: center;
+    color: var(--cy-text-muted);
+}
+
+.cy-file-card {
+    display: flex;
+    flex-direction: column;
+    border: 1px solid var(--cy-border);
+    border-radius: var(--cy-radius);
+    background: var(--cy-surface);
+    overflow: hidden;
+    transition: box-shadow .15s ease, transform .15s ease;
+}
+
+.cy-file-card:hover {
+    box-shadow: 0 6px 16px rgba(15, 23, 42, .1);
+    transform: translateY(-2px);
+}
+
+/* ---------------------------------------------------------------
+ *  ÖNİZLEME ALANI
+ * ---------------------------------------------------------------
+ *  DÜZELTME: Eskiden "object-fit: cover" kullanılıyordu. cover,
+ *  görseli kutuya TAŞIRARAK sığdırır ve taşan kısmı KIRPAR — dikey
+ *  bir fotoğrafın yalnızca orta şeridi görünüyordu. "contain" ise
+ *  görselin TAMAMINI, en-boy oranını bozmadan kutuya sığdırır.
+ *
+ *  Dama tahtası zemin, saydam (alfa kanallı) PNG'lerin nerede bittiği
+ *  belli olsun diyedir; düz beyaz zeminde saydam bir logo "havada"
+ *  duruyormuş gibi görünürdü.
+ * ------------------------------------------------------------ */
+.cy-file-card__thumb {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 150px;
+    padding: .4rem;
+    font-size: 2.6rem;
+    background-color: var(--cy-surface-soft);
+    background-image:
+        linear-gradient(45deg, rgba(15, 23, 42, .05) 25%, transparent 25%),
+        linear-gradient(-45deg, rgba(15, 23, 42, .05) 25%, transparent 25%),
+        linear-gradient(45deg, transparent 75%, rgba(15, 23, 42, .05) 75%),
+        linear-gradient(-45deg, transparent 75%, rgba(15, 23, 42, .05) 75%);
+    background-size: 16px 16px;
+    background-position: 0 0, 0 8px, 8px -8px, -8px 0;
+}
+
+.cy-file-card__thumb img {
+    max-width: 100%;
+    max-height: 100%;
+    width: auto;
+    height: auto;
+    object-fit: contain;
+    border-radius: 4px;
+}
+
+/* İndirme sayacı rozeti – önizlemenin sağ üst köşesinde */
+.cy-file-card__downloads {
+    position: absolute;
+    top: .4rem;
+    right: .4rem;
+    display: inline-flex;
+    align-items: center;
+    gap: .2rem;
+    padding: .12rem .4rem;
+    font-size: .68rem;
+    font-weight: 600;
+    line-height: 1.4;
+    color: #fff;
+    background: rgba(15, 23, 42, .72);
+    border-radius: 999px;
+    backdrop-filter: blur(2px);
+}
+
+/* Dosyanın diskte hangi klasöre yazıldığını gösteren küçük etiket */
+.cy-file-card__folder {
+    display: inline-block;
+    margin-top: .25rem;
+    padding: .05rem .35rem;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    font-size: .66rem;
+    color: var(--cy-text-muted);
+    background: var(--cy-surface-soft);
+    border: 1px solid var(--cy-border);
+    border-radius: 4px;
+}
+
+.cy-file-card__body {
+    padding: .65rem .75rem .4rem;
+}
+
+.cy-file-card__name {
+    margin: 0;
+    font-size: .85rem;
+    font-weight: 600;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.cy-file-card__meta {
+    margin: .2rem 0 0;
+    font-size: .72rem;
+    color: var(--cy-text-muted);
+}
+
+.cy-file-card__actions {
+    display: flex;
+    gap: .4rem;
+    padding: .5rem .75rem .75rem;
+}
+
+.delete-icon {
+    display: grid;
+    place-items: center;
+    width: 64px;
+    height: 64px;
+    margin: 0 auto 1rem;
+    border-radius: 50%;
+    background: rgba(220, 38, 38, .12);
+    color: var(--cy-danger);
+    font-size: 1.8rem;
+}
+
+
+/* ===============================================================
+ *  SÜZGEÇ ÇUBUĞU (kategori / dönem / sıralama)
+ * ============================================================ */
+.cy-filterbar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: .5rem;
+    padding: .6rem .75rem;
+    margin-bottom: 1rem;
+    background: var(--cy-surface-soft);
+    border: 1px solid var(--cy-border);
+    border-radius: var(--cy-radius);
+}
+
+.cy-filterbar__label {
+    font-size: .74rem;
+    font-weight: 600;
+    color: var(--cy-text-muted);
+    text-transform: uppercase;
+    letter-spacing: .03em;
+}
+
+/* Süzgeç düğmeleri: seçili olan dolu, diğerleri çerçeveli görünür.
+ * <select> yerine düğme kullanıldı; seçenek sayısı az olduğu için
+ * tek tıkla geçiş yapmak daha hızlı. */
+.cy-chip {
+    padding: .22rem .6rem;
+    font-size: .76rem;
+    font-weight: 500;
+    color: var(--cy-text);
+    background: var(--cy-surface);
+    border: 1px solid var(--cy-border);
+    border-radius: 999px;
+    cursor: pointer;
+    transition: background .12s ease, color .12s ease, border-color .12s ease;
+}
+
+.cy-chip:hover {
+    border-color: var(--cy-brand-600);
+    color: var(--cy-brand-600);
+}
+
+.cy-chip--active {
+    color: #fff;
+    background: var(--cy-brand-600);
+    border-color: var(--cy-brand-600);
+}
+
+.cy-chip__count {
+    margin-left: .25rem;
+    opacity: .75;
+    font-size: .7rem;
+}
+
+/* ===============================================================
+ *  ÖZET ŞERİDİ (toplam dosya / boyut / indirme)
+ * ============================================================ */
+.cy-stats {
+    display: flex;
+    flex-wrap: wrap;
+    gap: .5rem;
+    margin-bottom: 1rem;
+}
+
+.cy-stat {
+    flex: 1 1 130px;
+    padding: .55rem .75rem;
+    background: var(--cy-surface-soft);
+    border: 1px solid var(--cy-border);
+    border-radius: var(--cy-radius);
+}
+
+.cy-stat__value {
+    display: block;
+    font-size: 1.15rem;
+    font-weight: 700;
+    line-height: 1.2;
+    color: var(--cy-text);
+}
+
+.cy-stat__label {
+    font-size: .7rem;
+    color: var(--cy-text-muted);
+    text-transform: uppercase;
+    letter-spacing: .03em;
+}
+
+/* ===============================================================
+ *  AYARLAR PENCERESİ
+ * ============================================================ */
+.cy-settings-group {
+    margin-bottom: 1.1rem;
+}
+
+.cy-settings-group__title {
+    margin-bottom: .5rem;
+    font-size: .8rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: .03em;
+    color: var(--cy-text-muted);
+}
+
+/* Tür seçim kutucukları: iki sütunlu ızgara */
+.cy-type-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
+    gap: .4rem;
+}
+
+.cy-type-option {
+    display: flex;
+    align-items: center;
+    gap: .5rem;
+    padding: .45rem .6rem;
+    background: var(--cy-surface);
+    border: 1px solid var(--cy-border);
+    border-radius: var(--cy-radius);
+    cursor: pointer;
+    transition: border-color .12s ease, background .12s ease;
+}
+
+.cy-type-option:hover {
+    border-color: var(--cy-brand-600);
+}
+
+/* Seçili türü belirginleştir: kullanıcı tek bakışta neyin açık
+ * olduğunu görsün diye yalnızca onay kutusuna güvenmiyoruz. */
+.cy-type-option:has(input:checked) {
+    border-color: var(--cy-brand-600);
+    background: var(--cy-brand-100);
+}
+
+.cy-type-option__ext {
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    font-size: .7rem;
+    font-weight: 700;
+    color: var(--cy-brand-600);
+}
+
+.cy-type-option__label {
+    font-size: .76rem;
+    line-height: 1.25;
+}
+
+.cy-type-option__mime {
+    display: block;
+    font-size: .64rem;
+    color: var(--cy-text-muted);
+    word-break: break-all;
+}
+
+/* Ayarlar penceresindeki güvenlik uyarısı */
+.cy-settings-note {
+    padding: .55rem .7rem;
+    font-size: .74rem;
+    line-height: 1.5;
+    color: var(--cy-text-muted);
+    background: var(--cy-surface-soft);
+    border-left: 3px solid var(--cy-brand-600);
+    border-radius: 4px;
+}
