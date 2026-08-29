@@ -76,6 +76,7 @@ function handle_list(PDO $db): void
         'category' => (string) ($_POST['category'] ?? ''),
         'period'   => (string) ($_POST['period'] ?? ''),
         'sort'     => (string) ($_POST['sort'] ?? 'newest'),
+        'search'   => (string) ($_POST['search'] ?? ''),
     ];
 
     $files = array_map(static function (array $file): array {

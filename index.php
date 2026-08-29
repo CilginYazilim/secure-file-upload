@@ -47,6 +47,32 @@ $maxFiles = setting_int($db, 'max_files', UPLOAD_MAX_FILES, UPLOAD_MAX_FILES);
     <link rel="stylesheet" href="assets/css/bootstrap.min.css">
     <link rel="stylesheet" href="assets/css/cilginyazilim.css">
     <link rel="stylesheet" href="assets/css/style.css?v=<?= filemtime(__DIR__ . '/assets/css/style.css') ?>">
+
+    <!-- Mobil tarayıcıların adres çubuğunu tema rengine boyar. -->
+    <meta name="theme-color" content="#0b5cb5">
+
+    <!-- ================================================================
+         TEMA TERCİHİNİ ERKEN UYGULA
+         ----------------------------------------------------------------
+         Bu betik BİLEREK <head> içinde ve satır içidir. upload.js'in
+         içine konsaydı sayfa önce işletim sistemi temasıyla çizilir,
+         betik yüklendiğinde bir anda diğer temaya atlardı — "tema
+         titremesi" (FOUC) denen bu göz alıcı sıçramayı önlemenin tek
+         yolu, ilk boyamadan ÖNCE çalışan bir betiktir.
+         ================================================================ -->
+    <script>
+        (function () {
+            try {
+                var saved = localStorage.getItem('cy-theme');
+                if (saved === 'dark' || saved === 'light') {
+                    document.documentElement.setAttribute('data-cy-theme', saved);
+                }
+            } catch (e) {
+                /* Gizli sekmede localStorage erişimi hata verebilir;
+                   tema tercihi kritik değil, sessizce varsayılana düş. */
+            }
+        }());
+    </script>
 </head>
 
 <body class="cy-app">
@@ -71,14 +97,24 @@ $maxFiles = setting_int($db, 'max_files', UPLOAD_MAX_FILES, UPLOAD_MAX_FILES);
                         </div>
                     </a>
 
-                    <div class="d-flex align-items-center gap-2">
+                    <div class="cy-header-actions">
                         <span class="cy-badge cy-badge--glass">
                             Toplam <strong id="total_files">0</strong> dosya
                         </span>
 
+                        <!-- Tema anahtarı: seçim localStorage'a yazılır ve
+                             sayfa açılışında <html data-cy-theme="…"> olarak
+                             uygulanır (bkz. aşağıdaki satır içi betik). -->
+                        <button type="button" class="btn btn-light cy-btn btn-sm" id="toggle_theme"
+                                title="Açık / koyu tema" aria-label="Açık veya koyu temaya geç">
+                            <span aria-hidden="true" id="theme_icon">🌙</span>
+                            <span class="cy-btn__text">Tema</span>
+                        </button>
+
                         <button type="button" class="btn btn-light cy-btn btn-sm" id="open_settings"
                                 title="Ayarlar" aria-label="Ayarları aç">
-                            &#9881; Ayarlar
+                            <span aria-hidden="true">&#9881;</span>
+                            <span class="cy-btn__text">Ayarlar</span>
                         </button>
                     </div>
                 </div>
@@ -151,27 +187,58 @@ $maxFiles = setting_int($db, 'max_files', UPLOAD_MAX_FILES, UPLOAD_MAX_FILES);
                      gereksiz veri transferidir.
                      ============================================================ -->
                 <div class="cy-filterbar">
-                    <span class="cy-filterbar__label">Tür</span>
-                    <div class="d-flex flex-wrap gap-1" id="filter_category">
-                        <button type="button" class="cy-chip cy-chip--active" data-category="">Tümü</button>
-                        <button type="button" class="cy-chip" data-category="image">🖼 Görseller</button>
-                        <button type="button" class="cy-chip" data-category="document">📄 Belgeler</button>
+
+                    <!-- ARAMA: sunucuda LIKE ile uygulanır (fetch_files()).
+                         Yazarken sorgu gönderilmez, 300 ms duraklama
+                         beklenir (debounce) — her tuşta istek atmak hem
+                         sunucuyu hem mobil veri paketini gereksiz yorar. -->
+                    <div class="cy-filterbar__row cy-filterbar__row--search">
+                        <label class="cy-filterbar__label" for="filter_search">Ara</label>
+                        <div class="cy-search">
+                            <input type="search" class="form-control form-control-sm" id="filter_search"
+                                   placeholder="Dosya adında ara…" autocomplete="off"
+                                   aria-label="Dosya adında ara">
+                            <button type="button" class="cy-search__clear" id="clear_search"
+                                    title="Aramayı temizle" aria-label="Aramayı temizle" hidden>&times;</button>
+                        </div>
                     </div>
 
-                    <span class="cy-filterbar__label ms-lg-2">Klasör</span>
-                    <div class="d-flex flex-wrap gap-1" id="filter_period">
-                        <button type="button" class="cy-chip cy-chip--active" data-period="">Tümü</button>
-                        <!-- Ay düğmeleri JavaScript ile, gerçek verilerden üretilir -->
+                    <div class="cy-filterbar__row">
+                        <span class="cy-filterbar__label">Tür</span>
+                        <div class="cy-chip-row" id="filter_category">
+                            <button type="button" class="cy-chip cy-chip--active" data-category="">Tümü</button>
+                            <button type="button" class="cy-chip" data-category="image">🖼 Görseller</button>
+                            <button type="button" class="cy-chip" data-category="document">📄 Belgeler</button>
+                        </div>
                     </div>
 
-                    <span class="cy-filterbar__label ms-lg-2">Sırala</span>
-                    <select class="form-select form-select-sm w-auto" id="filter_sort" aria-label="Sıralama">
-                        <option value="newest">En yeni</option>
-                        <option value="oldest">En eski</option>
-                        <option value="largest">En büyük</option>
-                        <option value="popular">En çok indirilen</option>
-                        <option value="name">Ada göre</option>
-                    </select>
+                    <div class="cy-filterbar__row">
+                        <span class="cy-filterbar__label">Klasör</span>
+                        <div class="cy-chip-row" id="filter_period">
+                            <button type="button" class="cy-chip cy-chip--active" data-period="">Tümü</button>
+                            <!-- Ay düğmeleri JavaScript ile, gerçek verilerden üretilir -->
+                        </div>
+                    </div>
+
+                    <div class="cy-filterbar__row">
+                        <label class="cy-filterbar__label" for="filter_sort">Sırala</label>
+                        <select class="form-select form-select-sm" id="filter_sort" aria-label="Sıralama">
+                            <option value="newest">En yeni</option>
+                            <option value="oldest">En eski</option>
+                            <option value="largest">En büyük</option>
+                            <option value="popular">En çok indirilen</option>
+                            <option value="name">Ada göre</option>
+                        </select>
+
+                        <!-- Izgara / liste görünümü anahtarı. Dar ekranda
+                             liste görünümü çoğu zaman daha okunaklıdır. -->
+                        <div class="cy-viewswitch" role="group" aria-label="Görünüm">
+                            <button type="button" class="cy-chip cy-chip--active" data-view="grid"
+                                    title="Izgara görünümü" aria-label="Izgara görünümü">▦</button>
+                            <button type="button" class="cy-chip" data-view="list"
+                                    title="Liste görünümü" aria-label="Liste görünümü">☰</button>
+                        </div>
+                    </div>
                 </div>
 
                 <!-- ---------- Yüklenmiş dosyalar listesi ---------- -->
@@ -186,19 +253,27 @@ $maxFiles = setting_int($db, 'max_files', UPLOAD_MAX_FILES, UPLOAD_MAX_FILES);
 
             <div class="cy-card__footer d-flex flex-wrap justify-content-between gap-2">
                 <span>CSRF korumalı AJAX &middot; MIME içerikten doğrulanır &middot; .htaccess çalıştırma kilidi</span>
-                <span>PHP <?= e(PHP_VERSION) ?></span>
+                <span class="cy-nowrap">v<?= e(APP_VERSION) ?> &middot; PHP <?= e(PHP_VERSION) ?></span>
             </div>
         </div>
 
         <div class="cy-footer-note mt-4">
-            <p class="mb-1">
+            <p class="mb-2">
                 Bu açık kaynak örnek, <a href="https://cilginyazilim.com" target="_blank" rel="noopener">cilginyazilim.com</a>
                 tarafından geliştirilmiştir. MIT lisanslıdır.
             </p>
-            <p class="mb-0">
-                Kaynak kod:
-                <a href="https://github.com/CilginYazilim/secure-file-upload"
-                   target="_blank" rel="noopener">github.com/CilginYazilim/secure-file-upload</a>
+
+            <!-- Örnek kod kütüphanesi ve kaynak kod bağlantıları -->
+            <p class="cy-footer-links mb-0">
+                <a href="https://cilginyazilim.com/kutuphane" target="_blank" rel="noopener">
+                    📚 Örnek Kod Kütüphanesi
+                </a>
+                <a href="https://cilginyazilim.com/kutuphane/uygulama/secure-file-upload" target="_blank" rel="noopener">
+                    🔎 Bu Uygulamanın Sayfası
+                </a>
+                <a href="https://github.com/CilginYazilim/secure-file-upload" target="_blank" rel="noopener">
+                    💻 GitHub Deposu
+                </a>
             </p>
         </div>
     </div>
@@ -287,6 +362,36 @@ $maxFiles = setting_int($db, 'max_files', UPLOAD_MAX_FILES, UPLOAD_MAX_FILES);
                 <div class="modal-footer">
                     <button type="button" class="btn btn-outline-secondary cy-btn btn-sm" data-bs-dismiss="modal">Vazgeç</button>
                     <button type="button" class="btn btn-primary cy-btn btn-sm" id="save_settings">Kaydet</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ================================================================
+         MODAL – GÖRSEL ÖNİZLEME
+         ----------------------------------------------------------------
+         Küçük resme dokunulduğunda görselin tam hâli burada açılır.
+         Kaynak, uploads/ altındaki dosyanın KENDİSİDİR; o klasör
+         .htaccess ile hem çalıştırmaya hem MIME tahminine kapalıdır
+         (bkz. uploads/.htaccess), yani burada göstermek yeni bir risk
+         doğurmaz.
+         ================================================================ -->
+    <div class="modal fade cy-modal cy-lightbox" id="previewModal" tabindex="-1"
+         aria-labelledby="previewModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2 class="modal-title h6 mb-0 text-truncate" id="previewModalLabel">Önizleme</h2>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Kapat"></button>
+                </div>
+                <div class="modal-body cy-lightbox__body">
+                    <img id="preview_image" src="" alt="">
+                </div>
+                <div class="modal-footer justify-content-between">
+                    <span class="small cy-muted" id="preview_meta"></span>
+                    <a class="btn btn-primary cy-btn cy-btn--primary btn-sm" id="preview_download" href="#">
+                        &#11015; İndir
+                    </a>
                 </div>
             </div>
         </div>

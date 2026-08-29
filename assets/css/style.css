@@ -404,3 +404,412 @@
     border-left: 3px solid var(--cy-brand-600);
     border-radius: 4px;
 }
+
+
+/* ==================================================================
+ *  BAŞLIKTAKİ EYLEM DÜĞMELERİ
+ * ------------------------------------------------------------------
+ *  Rozet + tema + ayarlar üçlüsü. Geniş ekranda tek satır, dar
+ *  ekranda sarar ve tam genişliğe yayılır.
+ * ================================================================== */
+.cy-header-actions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: .5rem;
+}
+
+.cy-header-actions .cy-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: .35rem;
+}
+
+
+/* ==================================================================
+ *  SÜZGEÇ ÇUBUĞU – SATIR DÜZENİ
+ * ------------------------------------------------------------------
+ *  ESKİ DURUM: tüm süzgeçler TEK bir sarma kutusundaydı. Dar ekranda
+ *  etiketler ve düğmeler birbirine karışıp "Tür / Klasör / Sırala"
+ *  hangi başlığın hangi düğmelere ait olduğu anlaşılmaz hâle
+ *  geliyordu. Artık her süzgeç KENDİ satırında durur; mobilde etiket
+ *  üstte, düğmeler altta olur.
+ * ================================================================== */
+.cy-filterbar {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    gap: .55rem;
+}
+
+.cy-filterbar__row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: .4rem .55rem;
+}
+
+.cy-filterbar__label {
+    margin: 0;
+    flex: 0 0 auto;
+    min-width: 3.4rem;
+}
+
+.cy-chip-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: .3rem;
+    min-width: 0;
+}
+
+.cy-filterbar__row .form-select {
+    width: auto;
+    min-width: 9.5rem;
+}
+
+
+/* --- Arama kutusu ------------------------------------------------- */
+.cy-search {
+    position: relative;
+    flex: 1 1 220px;
+    min-width: 0;
+}
+
+.cy-search .form-control {
+    padding-right: 2rem;
+}
+
+/* Tarayıcının kendi "x" düğmesi platformdan platforma değişir ve
+ * bizim temizle düğmemizle çakışır; kapatıp kendi düğmemizi koyuyoruz. */
+.cy-search input[type="search"]::-webkit-search-cancel-button {
+    -webkit-appearance: none;
+    appearance: none;
+}
+
+.cy-search__clear {
+    position: absolute;
+    top: 50%;
+    right: .35rem;
+    transform: translateY(-50%);
+    display: grid;
+    place-items: center;
+    width: 1.6rem;
+    height: 1.6rem;
+    padding: 0;
+    font-size: 1.1rem;
+    line-height: 1;
+    color: var(--cy-text-muted);
+    background: transparent;
+    border: 0;
+    border-radius: 50%;
+    cursor: pointer;
+}
+
+.cy-search__clear:hover {
+    color: var(--cy-danger);
+    background: var(--cy-surface-soft);
+}
+
+
+/* --- Izgara / liste anahtarı -------------------------------------- */
+.cy-viewswitch {
+    display: inline-flex;
+    gap: .25rem;
+    margin-left: auto;
+}
+
+.cy-viewswitch .cy-chip {
+    width: 2rem;
+    padding: .22rem 0;
+    text-align: center;
+}
+
+
+/* ==================================================================
+ *  LİSTE GÖRÜNÜMÜ
+ * ------------------------------------------------------------------
+ *  Aynı kartlar, tek sütunda ve yatay yerleşimle. Dar ekranda uzun
+ *  dosya adlarını okumak için ızgaradan daha elverişlidir.
+ * ================================================================== */
+.cy-file-grid--list {
+    grid-template-columns: 1fr;
+    gap: .5rem;
+}
+
+.cy-file-grid--list .cy-file-card {
+    flex-direction: row;
+    align-items: center;
+}
+
+.cy-file-grid--list .cy-file-card:hover {
+    transform: none;
+}
+
+.cy-file-grid--list .cy-file-card__thumb {
+    flex: 0 0 72px;
+    width: 72px;
+    height: 72px;
+    font-size: 1.6rem;
+    border-right: 1px solid var(--cy-border);
+}
+
+.cy-file-grid--list .cy-file-card__downloads {
+    top: .15rem;
+    right: .15rem;
+    font-size: .6rem;
+}
+
+.cy-file-grid--list .cy-file-card__body {
+    flex: 1 1 auto;
+    min-width: 0;
+    padding: .5rem .75rem;
+}
+
+.cy-file-grid--list .cy-file-card__actions {
+    flex: 0 0 auto;
+    padding: .5rem .75rem;
+}
+
+
+/* ==================================================================
+ *  GÖRSEL ÖNİZLEME PENCERESİ
+ * ================================================================== */
+.cy-file-card__thumb--clickable { cursor: zoom-in; }
+
+.cy-file-card__thumb--clickable:focus-visible {
+    outline: 2px solid var(--cy-brand-600);
+    outline-offset: -2px;
+}
+
+.cy-lightbox__body {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    /* Görsel ne kadar büyük olursa olsun pencere ekranı taşmasın:
+     * yükseklik görünen alanın %70'iyle sınırlanır. */
+    max-height: 70vh;
+    padding: .75rem;
+    background: var(--cy-surface-soft);
+}
+
+.cy-lightbox__body img {
+    max-width: 100%;
+    max-height: 68vh;
+    object-fit: contain;
+    border-radius: var(--cy-radius-sm);
+}
+
+
+/* ==================================================================
+ *  ALT BİLGİ BAĞLANTILARI
+ * ================================================================== */
+.cy-footer-links {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: .4rem .9rem;
+}
+
+.cy-footer-links a {
+    display: inline-flex;
+    align-items: center;
+    gap: .3rem;
+    padding: .3rem .7rem;
+    background: var(--cy-surface);
+    border: 1px solid var(--cy-border);
+    border-radius: var(--cy-radius-pill);
+    transition: border-color var(--cy-transition), color var(--cy-transition);
+}
+
+.cy-footer-links a:hover {
+    border-color: var(--cy-brand-600);
+    text-decoration: none;
+}
+
+
+/* ==================================================================
+ *  MOBİL UYUM
+ * ------------------------------------------------------------------
+ *  YAKLAŞIM: Bu sayfada mobilin asıl sorunu "sığmamak" değil,
+ *  DOKUNMA HEDEFLERİNİN küçüklüğüydü — 34x34 piksellik indir/sil
+ *  düğmeleri parmakla ıskalanıyordu. WCAG 2.5.5 en az 44x44 piksel
+ *  önerir; aşağıdaki kurallar dar ekranda bu eşiği sağlar.
+ * ================================================================== */
+@media (max-width: 767.98px) {
+
+    .container { padding-left: .75rem; padding-right: .75rem; }
+
+    /* --- Başlık --- */
+    .cy-header-actions {
+        width: 100%;
+        justify-content: space-between;
+    }
+
+    .cy-header-actions .cy-badge {
+        order: -1;
+        flex: 1 1 100%;
+        justify-content: center;
+    }
+
+    .cy-header-actions .cy-btn {
+        flex: 1 1 0;
+        justify-content: center;
+        min-height: 40px;
+    }
+
+    /* --- Sürükle-bırak alanı ---
+     * Mobilde "sürükleyip bırakma" diye bir eylem yoktur; alan
+     * daraltılır, metinler küçültülür. */
+    .cy-dropzone { padding: 1.6rem 1rem; }
+    .cy-dropzone__icon { font-size: 1.6rem; margin-bottom: .25rem; }
+    .cy-dropzone__title { font-size: .95rem; }
+    .cy-dropzone__hint { font-size: .75rem; }
+
+    /* --- Özet şeridi: 2x2 ızgara ---
+     * flex + "flex: 1 1 130px" dar ekranda 4 kutuyu alt alta tek
+     * sütuna diziyordu ve şerit çok uzuyordu. 2 sütunlu ızgara aynı
+     * bilgiyi yarı yükseklikte gösterir. */
+    .cy-stats {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: .4rem;
+    }
+
+    .cy-stat { padding: .45rem .6rem; }
+    .cy-stat__value { font-size: 1rem; }
+    .cy-stat__label { font-size: .64rem; }
+
+    /* --- Süzgeçler ---
+     * Etiket üstte, denetimler altta: dar ekranda yan yana
+     * sıkıştırmak yerine dikey akış daha okunaklı. */
+    .cy-filterbar { padding: .55rem .6rem; }
+
+    .cy-filterbar__row {
+        flex-direction: column;
+        align-items: stretch;
+        gap: .3rem;
+    }
+
+    .cy-filterbar__label { min-width: 0; }
+
+    /* Tür/klasör düğmeleri: sarmak yerine yatay kaydırma.
+     * -webkit-overflow-scrolling ile iOS'ta akıcı kaydırma sağlanır. */
+    .cy-chip-row {
+        flex-wrap: nowrap;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+        scrollbar-width: none;
+        padding-bottom: .15rem;
+    }
+
+    .cy-chip-row::-webkit-scrollbar { display: none; }
+
+    .cy-chip {
+        flex: 0 0 auto;
+        padding: .38rem .7rem;   /* dokunma hedefi büyütüldü */
+        font-size: .8rem;
+    }
+
+    /* Sıralama ve görünüm anahtarı aynı satırı paylaşsın. */
+    .cy-filterbar__row:last-child {
+        flex-direction: row;
+        flex-wrap: wrap;
+        align-items: center;
+    }
+
+    .cy-filterbar__row .form-select {
+        flex: 1 1 auto;
+        min-width: 0;
+        min-height: 40px;
+    }
+
+    .cy-viewswitch .cy-chip {
+        width: 2.5rem;
+        min-height: 40px;
+    }
+
+    /* --- Dosya kartları ---
+     * 180 piksellik minimum, 360 piksellik bir telefonda tek sütun
+     * üretiyordu ve sayfa gereksiz uzuyordu. Mobilde 2 sütun sabit. */
+    .cy-file-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: .6rem;
+    }
+
+    .cy-file-card__thumb { height: 116px; font-size: 2rem; }
+    .cy-file-card__body { padding: .5rem .55rem .3rem; }
+    .cy-file-card__name { font-size: .78rem; }
+    .cy-file-card__meta { font-size: .66rem; }
+    .cy-file-card__folder { font-size: .6rem; }
+
+    /* DOKUNMA HEDEFİ: düğmeler satırı paylaşıp 44 piksel yüksekliğe
+     * çıkar. Böylece parmakla ıskalamak neredeyse imkânsız olur. */
+    .cy-file-card__actions {
+        gap: .35rem;
+        padding: .4rem .55rem .55rem;
+    }
+
+    .cy-file-card__actions .cy-btn-icon {
+        flex: 1 1 0;
+        width: auto;
+        height: 44px;
+        font-size: 1rem;
+    }
+
+    /* Liste görünümünde küçük resim biraz daha küçük. */
+    .cy-file-grid--list .cy-file-card__thumb {
+        flex-basis: 64px;
+        width: 64px;
+        height: 64px;
+    }
+
+    .cy-file-grid--list .cy-file-card__actions .cy-btn-icon {
+        flex: 0 0 auto;
+        width: 44px;
+    }
+
+    /* --- Pencereler ---
+     * Bootstrap'in varsayılan kenar boşluğu dar ekranda içeriği
+     * sıkıştırıyordu; düğmeler de dokunma hedefine büyütüldü. */
+    .cy-modal .modal-dialog { margin: .5rem; }
+    .cy-modal .modal-body { padding: 1rem; }
+    .cy-modal .modal-footer .btn { flex: 1 1 auto; min-height: 42px; }
+
+    .cy-type-grid { grid-template-columns: 1fr; }
+
+    .cy-lightbox__body { max-height: 60vh; }
+    .cy-lightbox__body img { max-height: 58vh; }
+
+    /* --- Alt bilgi --- */
+    .cy-card__footer { flex-direction: column; gap: .25rem; font-size: .78rem; }
+    .cy-footer-links a { font-size: .78rem; }
+
+    /* Bildirimler mobilde tam genişliğe yayılsın; sağ üst köşede
+     * daralmış bir kutu telefonda okunmuyordu. */
+    .cy-toast-container { left: 0; width: 100%; }
+    .cy-toast-container .toast { width: auto; }
+}
+
+
+/* Çok dar ekranlar: kart ızgarası tek sütuna düşer, iki sütun bu
+ * genişlikte dosya adını okunmaz hâle getiriyordu. Düğme yazıları da
+ * gizlenip yalnızca simge kalır. */
+@media (max-width: 380px) {
+    .cy-file-grid { grid-template-columns: 1fr; }
+    .cy-file-card__thumb { height: 150px; }
+    .cy-header-actions .cy-btn__text { display: none; }
+}
+
+
+/* ==================================================================
+ *  DOKUNMATİK CİHAZLAR
+ * ------------------------------------------------------------------
+ *  :hover dokunmatik ekranda "takılı kalır" — kullanıcı bir karta
+ *  dokunduktan sonra kart yukarıda asılı durur. Bu yüzden yukarı
+ *  kaldırma efekti YALNIZCA gerçek imleci olan cihazlarda çalışsın.
+ * ================================================================== */
+@media (hover: none) {
+    .cy-file-card:hover { transform: none; box-shadow: none; }
+    .cy-btn:hover { transform: none; }
+    .cy-btn-icon:hover { transform: none; }
+}

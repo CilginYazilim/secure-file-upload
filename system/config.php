@@ -31,6 +31,11 @@ define('DB_CHARSET', 'utf8mb4');
  * ------------------------------------------------------------------ */
 define('APP_DEBUG', true); // Canlıya alırken MUTLAKA false yapın.
 
+/* Sürüm numarası. Arayüzün alt bilgisinde ve README'de aynı değer
+ * görünsün diye TEK yerde tanımlanır; elle iki yerde güncellemek
+ * er ya da geç birinin unutulmasıyla sonuçlanır. */
+define('APP_VERSION', '1.1.0');
+
 error_reporting(APP_DEBUG ? E_ALL : 0);
 ini_set('display_errors', APP_DEBUG ? '1' : '0');
 

@@ -6,8 +6,11 @@
 
 A PHP file upload example built on **layered security**.
 Drag & drop · Progress bars · Type/date foldering · Download counter · Configurable type whitelist
+Search · Grid/list view · Image lightbox · Light/dark theme · **Mobile-friendly UI**
 
-**[cilginyazilim.com](https://cilginyazilim.com)** · MIT License
+**[cilginyazilim.com](https://cilginyazilim.com)** · MIT License · Version **1.1.0**
+
+**[📚 Code Library](https://cilginyazilim.com/kutuphane)** · [This application's page](https://cilginyazilim.com/kutuphane/uygulama/secure-file-upload/)
 
 [🇹🇷 Türkçe](README.md) · 🇬🇧 English
 
@@ -26,11 +29,13 @@ Drag & drop · Progress bars · Type/date foldering · Download counter · Confi
 - [Function reference](#function-reference)
 - [On-disk folder structure](#on-disk-folder-structure)
 - [Settings screen](#settings-screen)
+- [UI features and mobile support](#ui-features-and-mobile-support)
 - [API endpoints](#api-endpoints)
 - [Database schema](#database-schema)
 - [Installation](#installation)
 - [Customization](#customization)
 - [Example use cases](#example-use-cases)
+- [Changelog](#changelog)
 
 ---
 
@@ -205,7 +210,7 @@ max_bytes=8388608  max_files=10            ← clamped to the ceiling
 
 ```
 secure-file-upload/
-├── index.php                  ← UI: drag & drop, filters, summary, settings modal
+├── index.php                  ← UI: drag & drop, search, filters, summary, settings + lightbox modals
 ├── cy_upload.sql              ← Database setup (files + settings tables)
 │
 ├── system/
@@ -216,8 +221,8 @@ secure-file-upload/
 │
 ├── assets/
 │   ├── css/cilginyazilim.css  ← SHARED BRAND TEMPLATE — do not modify
-│   ├── css/style.css          ← Page-specific styles only
-│   ├── js/upload.js           ← Drag & drop, progress, filters, settings UI
+│   ├── css/style.css          ← Page-specific styles only + mobile support
+│   ├── js/upload.js           ← Drag & drop, progress, search, filters, theme, settings UI
 │   └── images/                ← Logo + screenshots
 │
 ├── ornek-dosyalar/            ← Ready-made samples to try (PNG/JPG/WEBP/GIF/PDF/TXT/ZIP)
@@ -259,7 +264,7 @@ secure-file-upload/
 | `safe_upload_path()` | Validates a relative path (pattern + `realpath` containment check) |
 | `delete_stored_file()` | Deletes the file and prunes empty type/year/month folders |
 | `increment_download_count()` | Increments the counter in **one SQL statement** (race-free) |
-| `find_file()` / `fetch_files()` / `fetch_file_stats()` | Data access; filters are bound parameters, sorting is whitelisted |
+| `find_file()` / `fetch_files()` / `fetch_file_stats()` | Data access; filters (type/month/**search**) are bound parameters, sorting is whitelisted, `LIKE` wildcards escaped |
 | `format_bytes()` / `format_date()` / `file_icon()` | Formatting (no security decisions) |
 
 ---
@@ -322,6 +327,53 @@ So the **only** way to enable a dangerous type is to edit `system/config.php` �
 
 ---
 
+## UI features and mobile support
+
+Version 1.1.0 makes the interface as usable on a phone as it is on a desktop. Below is **what changed** and, more importantly, **why**.
+
+### New UI features
+
+| Feature | How it works | Why this way? |
+|---|---|---|
+| **Search by file name** | Server-side `LIKE ... ESCAPE` (`fetch_files()`) | Filtering in the browser means downloading the entire list for a 10,000-record archive. Filters were already server-side; search follows the same path. |
+| **300 ms typing delay** (*debounce*) | `upload.js` — `setTimeout` | Firing a request per keystroke means 10 useless queries for a 10-letter search — and wasted mobile data. |
+| **Grid / list view** | CSS class + `localStorage` | A list reads better for long file names on narrow screens; a grid is better for scanning. The preference is stored in the browser. |
+| **Image lightbox** | Bootstrap modal | Tapping a thumbnail enlarges it without downloading. The source lives under `uploads/`, a folder locked against both execution and MIME sniffing by `.htaccess` — no new risk. |
+| **Light / dark theme toggle** | `<html data-cy-theme>` + `localStorage` | `cilginyazilim.css` already carried dark-theme tokens; the only missing piece was letting the user choose **manually**. |
+
+> **Why is the theme fix inside `<head>`?** Had the preference-reading script lived in `upload.js`, the page would first paint with the OS theme and then snap to the other one once the script loaded. The only way to avoid that flash (FOUC) is an inline script that runs **before the first paint** — which is exactly why that small `<script>` sits in `index.php`.
+
+### Why does search use `ESCAPE`?
+
+The search term is passed as a prepared-statement **parameter**, so there is no SQL injection risk. But `LIKE`'s own wildcards (`%` and `_`) are still meaningful inside a parameter:
+
+| User types | Without escaping | Now |
+|---|---|---|
+| `%` | **Every record** matched | 0 results (a literal `%` is searched) |
+| `_` | Any single character matched | 0 results |
+| `a'b` | (already safe) | 0 results |
+
+This is a **correctness** problem rather than a security hole — but silently returning wrong results is not acceptable either.
+
+### Mobile adjustments
+
+The real mobile problem here was not "not fitting" but **touch targets being too small**: the 34×34 px download/delete buttons were easy to miss with a finger. WCAG 2.5.5 recommends at least 44×44 px.
+
+| Area | Before | After |
+|---|---|---|
+| Card action buttons | 34×34 px | **44 px** tall buttons sharing the row |
+| Summary strip | 4 boxes stacked (very tall) | **2×2 grid** (half the height) |
+| Filter bar | One wrapping box, labels got mixed up | Each filter on its own row, label above |
+| Type/folder chips | Wrapped over 3–4 lines | Single line, **horizontal scroll** |
+| File grid | `minmax(180px)` → one column on phones | **2 columns** (one column at ≤380 px) |
+| Header buttons | Fixed width, cramped | Stretch to full width; icon-only at ≤380 px |
+| Toasts | Narrow box in the top-right | **Full width** |
+| Card `:hover` effect | Stayed "stuck" after a tap | Disabled via `@media (hover: none)` |
+
+> **Why is `@media (hover: none)` needed?** On a touch screen `:hover` stays active until you tap elsewhere — the user taps a card and the card remains lifted. This rule keeps the lift effect for devices with a real pointer only.
+
+---
+
 ## API endpoints
 
 Everything runs through `system/ajax.php` over **POST**, and a **CSRF token is mandatory** (`csrf_token` field or `X-CSRF-Token` header).
@@ -332,6 +384,7 @@ Everything runs through `system/ajax.php` over **POST**, and a **CSRF token is m
 |---|---|---|
 | `category` | `image` \| `document` \| empty | Type filter |
 | `period` | `YYYY-MM` | Month filter |
+| `search` | text (max 100 chars) | Search in file names. `%` and `_` are escaped (`ESCAPE`), bound parameter |
 | `sort` | `newest` \| `oldest` \| `largest` \| `popular` \| `name` | Sorting (whitelisted) |
 
 ```json
@@ -515,10 +568,52 @@ This is a **demo**; a real project also needs:
 
 ---
 
+## Changelog
+
+The version number lives in exactly one place: `APP_VERSION` in `system/config.php`. The value shown in the UI footer is read from there.
+
+### 1.1.0
+
+**Interface**
+
+- **Search by file name** — server-side `LIKE ... ESCAPE`, 300 ms *debounce*, clear button
+- **Grid / list view** toggle, preference stored in `localStorage`
+- **Image lightbox** — click a thumbnail for the full-size image, with a download link
+- **Light / dark theme toggle** — applied early inside `<head>`, no theme flash (FOUC)
+- The empty-list message now depends on context ("no files match these filters" ↔ "no files uploaded yet")
+- Footer now links to the **[code library](https://cilginyazilim.com/kutuphane)** and this application's page
+- Footer shows the version number
+
+**Mobile**
+
+- Touch targets raised to **44 px** (WCAG 2.5.5)
+- Summary strip as a **2×2 grid**, file cards in **2 columns** (one column at ≤380 px)
+- Filters split into separate rows; type/folder chips scroll **horizontally**
+- Modals, footer and toasts adapted to narrow screens
+- `@media (hover: none)` disables hover effects that stayed "stuck" on touch devices
+- Added a `theme-color` meta tag (mobile address bar color)
+
+**Accessibility**
+
+- Thumbnails can be opened from the keyboard (`role="button"` + Enter/Space)
+- `aria-label` / `<label>` bindings added for search, sorting and the view toggle
+
+**Code**
+
+- Added the `APP_VERSION` constant (`system/config.php`)
+- `fetch_files()` now supports a `search` filter; `%` and `_` wildcards are escaped
+
+### 1.0.0
+
+- Initial release: layered security defense, type/date foldering, download counter, settings screen
+- Measured and closed vulnerabilities: `Content-Disposition` header injection, `getimagesize()` bypass, missing security headers in the upload folder, CSRF rejection returning 500
+
+---
+
 ## License
 
 MIT — download and use it however you like.
 
 Copyright © **Çılgın Yazılım** ([cilginyazilim.com](https://cilginyazilim.com))
 
-[github.com/CilginYazilim/secure-file-upload](https://github.com/CilginYazilim/secure-file-upload)
+[github.com/CilginYazilim/secure-file-upload](https://github.com/CilginYazilim/secure-file-upload) · [📚 Code Library](https://cilginyazilim.com/kutuphane)

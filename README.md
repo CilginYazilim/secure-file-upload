@@ -6,8 +6,11 @@
 
 PHP ile **katmanlı güvenlik** uygulanmış dosya yükleme örneği.
 Sürükle-bırak · İlerleme çubuğu · Tür/tarih klasörleme · İndirme sayacı · Ayarlanabilir tür beyaz listesi
+Arama · Izgara/liste görünümü · Görsel önizleme · Açık/koyu tema · **Mobil uyumlu arayüz**
 
-**[cilginyazilim.com](https://cilginyazilim.com)** · MIT Lisansı
+**[cilginyazilim.com](https://cilginyazilim.com)** · MIT Lisansı · Sürüm **1.1.0**
+
+**[📚 Örnek Kod Kütüphanesi](https://cilginyazilim.com/kutuphane)** · [Bu uygulamanın sayfası](https://cilginyazilim.com/kutuphane/uygulama/secure-file-upload/)
 
 🇹🇷 Türkçe · [🇬🇧 English](README.en.md)
 
@@ -26,11 +29,13 @@ Sürükle-bırak · İlerleme çubuğu · Tür/tarih klasörleme · İndirme say
 - [Fonksiyon referansı](#fonksiyon-referansı)
 - [Klasör yapısı](#diskteki-klasör-yapısı)
 - [Ayarlar ekranı](#ayarlar-ekranı)
+- [Arayüz özellikleri ve mobil uyum](#arayüz-özellikleri-ve-mobil-uyum)
 - [API uç noktaları](#api-uç-noktaları)
 - [Veritabanı şeması](#veritabanı-şeması)
 - [Kurulum](#kurulum)
 - [Özelleştirme](#özelleştirme)
 - [Örnek kullanım alanları](#örnek-kullanım-alanları)
+- [Sürüm geçmişi](#sürüm-geçmişi)
 
 ---
 
@@ -203,7 +208,7 @@ max_bytes=8388608  max_files=10            ← tavana kelepçelendi
 
 ```
 secure-file-upload/
-├── index.php                  ← Arayüz: sürükle-bırak, süzgeçler, özet, ayarlar penceresi
+├── index.php                  ← Arayüz: sürükle-bırak, arama, süzgeçler, özet, ayarlar + önizleme pencereleri
 ├── cy_upload.sql              ← Veritabanı kurulumu (files + settings tabloları)
 │
 ├── system/
@@ -214,8 +219,8 @@ secure-file-upload/
 │
 ├── assets/
 │   ├── css/cilginyazilim.css  ← ORTAK MARKA KALIBI — dokunulmaz
-│   ├── css/style.css          ← Yalnızca bu sayfaya özel stiller
-│   ├── js/upload.js           ← Sürükle-bırak, ilerleme, süzgeç, ayar arayüzü
+│   ├── css/style.css          ← Yalnızca bu sayfaya özel stiller + mobil uyum
+│   ├── js/upload.js           ← Sürükle-bırak, ilerleme, arama, süzgeç, tema, ayar arayüzü
 │   └── images/                ← Logo + ekran görüntüleri
 │
 ├── ornek-dosyalar/            ← Denemek için hazır örnekler (PNG/JPG/WEBP/GIF/PDF/TXT/ZIP)
@@ -257,7 +262,7 @@ secure-file-upload/
 | `safe_upload_path()` | Göreli yolu doğrular (kalıp + `realpath` sınır denetimi) |
 | `delete_stored_file()` | Dosyayı siler, boş kalan tür/yıl/ay klasörlerini toplar |
 | `increment_download_count()` | Sayacı **tek SQL sorgusuyla** artırır (yarış durumuna kapalı) |
-| `find_file()` / `fetch_files()` / `fetch_file_stats()` | Veri erişimi; süzgeçler parametreli, sıralama beyaz listeli |
+| `find_file()` / `fetch_files()` / `fetch_file_stats()` | Veri erişimi; süzgeçler (tür/ay/**arama**) parametreli, sıralama beyaz listeli, `LIKE` jokerleri kaçırılmış |
 | `format_bytes()` / `format_date()` / `file_icon()` | Biçimlendirme (güvenlik kararı vermez) |
 
 ---
@@ -320,6 +325,53 @@ Yani tehlikeli bir türü etkinleştirmenin **tek yolu** `system/config.php` dos
 
 ---
 
+## Arayüz özellikleri ve mobil uyum
+
+Sürüm 1.1.0 ile arayüz masaüstünde olduğu kadar telefonda da kullanılabilir hâle getirildi. Aşağıda **ne değişti** ve daha önemlisi **neden değişti** yazılıdır.
+
+### Yeni arayüz özellikleri
+
+| Özellik | Nasıl çalışır | Neden böyle? |
+|---|---|---|
+| **Dosya adında arama** | Sunucuda `LIKE ... ESCAPE` ile (`fetch_files()`) | Filtrelemeyi tarayıcıda yapmak, 10.000 kayıtlık bir arşivde tüm listeyi indirmek demektir. Süzgeç zaten sunucudaydı, arama da aynı yolu izler. |
+| **Yazarken 300 ms bekleme** (*debounce*) | `upload.js` — `setTimeout` | Her tuş vuruşunda istek atmak 10 harflik bir aramada 10 gereksiz sorgu üretir. Mobil veri paketini de boşuna harcar. |
+| **Izgara / liste görünümü** | CSS sınıfı + `localStorage` | Dar ekranda uzun dosya adlarını okumak için liste, göz gezdirmek için ızgara daha uygun. Tercih tarayıcıda saklanır. |
+| **Görsel önizleme (lightbox)** | Bootstrap modal | Küçük resme dokunmak dosyayı indirmeden büyütür. Kaynak `uploads/` altındadır ve o klasör `.htaccess` ile hem çalıştırmaya hem MIME tahminine kapalıdır — yeni bir risk doğmaz. |
+| **Açık / koyu tema anahtarı** | `<html data-cy-theme>` + `localStorage` | `cilginyazilim.css` zaten koyu tema token'larını taşıyordu; eksik olan yalnızca kullanıcının **elle** seçebilmesiydi. |
+
+> **Tema titremesi (FOUC) neden `<head>` içinde çözüldü?** Tercihi okuyan betik `upload.js` içine konsaydı sayfa önce işletim sistemi temasıyla çizilir, betik yüklendiğinde bir anda diğer temaya sıçrardı. Bu sıçramayı önlemenin tek yolu, **ilk boyamadan önce** çalışan satır içi bir betiktir — bu yüzden `index.php` içindeki o küçük `<script>` bilerek oradadır.
+
+### Arama neden `ESCAPE` kullanıyor?
+
+Aranan metin hazırlanmış ifade **parametresi** olarak geçer, yani SQL enjeksiyonu riski yoktur. Ama `LIKE`'ın kendi joker karakterleri (`%` ve `_`) parametre içinde de anlamlıdır:
+
+| Kullanıcı ne yazarsa | Kaçış olmasaydı | Şimdi |
+|---|---|---|
+| `%` | **Tüm kayıtlar** eşleşirdi | 0 sonuç (aranan gerçekten `%` karakteri) |
+| `_` | Herhangi bir tek karakter eşleşirdi | 0 sonuç |
+| `a'b` | (zaten güvenliydi) | 0 sonuç |
+
+Bu bir güvenlik açığı değil, **doğruluk** sorunudur; yine de sessizce yanlış sonuç vermek kabul edilebilir değildir.
+
+### Mobil düzenlemeler
+
+Bu sayfada mobilin asıl sorunu "sığmamak" değil, **dokunma hedeflerinin küçüklüğüydü**: 34×34 piksellik indir/sil düğmeleri parmakla ıskalanıyordu. WCAG 2.5.5 en az 44×44 piksel önerir.
+
+| Alan | Önce | Sonra |
+|---|---|---|
+| Kart işlem düğmeleri | 34×34 px | Satırı paylaşan **44 px** yükseklikte düğmeler |
+| Özet şeridi | 4 kutu alt alta (uzun şerit) | **2×2 ızgara** (yarı yükseklik) |
+| Süzgeç çubuğu | Tek sarma kutusu, etiketler karışıyordu | Her süzgeç kendi satırında; etiket üstte |
+| Tür/klasör düğmeleri | Sararak 3-4 satır kaplıyordu | Tek satır, **yatay kaydırma** |
+| Dosya ızgarası | `minmax(180px)` → telefonda tek sütun | **2 sütun** (≤380 px'te tek sütun) |
+| Başlık düğmeleri | Sabit genişlik, sıkışıyordu | Tam genişliğe yayılır; ≤380 px'te yalnızca simge |
+| Bildirimler | Sağ üstte dar kutu | **Tam genişlik** |
+| Kart `:hover` efekti | Dokunmada "takılı" kalıyordu | `@media (hover: none)` ile kapatıldı |
+
+> **`@media (hover: none)` neden gerekli?** Dokunmatik ekranda `:hover` bir kez tetiklendiğinde başka bir yere dokunulana kadar sürer — kullanıcı bir karta dokunur, kart yukarıda asılı kalır. Bu kural, kaldırma efektini yalnızca gerçek imleci olan cihazlarda çalıştırır.
+
+---
+
 ## API uç noktaları
 
 Tümü `system/ajax.php` üzerinden **POST** ile çalışır ve **CSRF anahtarı zorunludur** (`csrf_token` alanı veya `X-CSRF-Token` başlığı).
@@ -330,6 +382,7 @@ Tümü `system/ajax.php` üzerinden **POST** ile çalışır ve **CSRF anahtarı
 |---|---|---|
 | `category` | `image` \| `document` \| boş | Tür süzgeci |
 | `period` | `YYYY-AA` | Ay süzgeci |
+| `search` | metin (en fazla 100 karakter) | Dosya adında arama. `%` ve `_` kaçırılır (`ESCAPE`), parametreli sorgu |
 | `sort` | `newest` \| `oldest` \| `largest` \| `popular` \| `name` | Sıralama (beyaz liste) |
 
 ```json
@@ -513,10 +566,52 @@ Bu bir **demo**dur; gerçek projede ayrıca şunlar gerekir:
 
 ---
 
+## Sürüm geçmişi
+
+Sürüm numarası tek bir yerde tutulur: `system/config.php` içindeki `APP_VERSION`. Arayüzün alt bilgisinde görünen değer de oradan okunur.
+
+### 1.1.0
+
+**Arayüz**
+
+- **Dosya adında arama** — sunucu tarafında `LIKE ... ESCAPE`, 300 ms *debounce*, temizleme düğmesi
+- **Izgara / liste görünümü** anahtarı, tercih `localStorage`'da saklanır
+- **Görsel önizleme penceresi** — küçük resme tıklayınca tam boy, indirme bağlantısıyla birlikte
+- **Açık / koyu tema anahtarı** — `<head>` içinde erken uygulanır, tema titremesi (FOUC) yok
+- Boş liste mesajı artık duruma göre değişir ("süzgeçlere uyan dosya yok" ↔ "henüz dosya yüklenmedi")
+- Alt bilgiye **[örnek kod kütüphanesi](https://cilginyazilim.com/kutuphane)** ve uygulama sayfası bağlantıları eklendi
+- Alt bilgide sürüm numarası gösterilir
+
+**Mobil**
+
+- Dokunma hedefleri **44 px**'e çıkarıldı (WCAG 2.5.5)
+- Özet şeridi **2×2 ızgara**, dosya kartları **2 sütun** (≤380 px'te tek sütun)
+- Süzgeçler satır satır ayrıldı; tür/klasör düğmeleri **yatay kaydırmalı**
+- Pencereler, alt bilgi ve bildirimler dar ekrana uyarlandı
+- `@media (hover: none)` ile dokunmatikte "takılı kalan" hover efektleri kapatıldı
+- `theme-color` üst verisi eklendi (mobil adres çubuğu rengi)
+
+**Erişilebilirlik**
+
+- Küçük resimler klavyeyle de açılabilir (`role="button"` + Enter/Space)
+- Arama, sıralama ve görünüm anahtarlarına `aria-label` / `<label>` bağları eklendi
+
+**Kod**
+
+- `APP_VERSION` sabiti eklendi (`system/config.php`)
+- `fetch_files()` artık `search` süzgecini destekler; `%` ve `_` jokerleri kaçırılır
+
+### 1.0.0
+
+- İlk sürüm: katmanlı güvenlik savunması, tür/tarih klasörleme, indirme sayacı, ayarlar ekranı
+- Ölçülmüş ve kapatılan açıklar: `Content-Disposition` başlık enjeksiyonu, `getimagesize()` baypası, yükleme klasöründe eksik güvenlik başlıkları, CSRF reddinin 500 dönmesi
+
+---
+
 ## Lisans
 
 MIT — dilediğiniz gibi indirip kullanabilirsiniz.
 
 Telif © **Çılgın Yazılım** ([cilginyazilim.com](https://cilginyazilim.com))
 
-[github.com/CilginYazilim/secure-file-upload](https://github.com/CilginYazilim/secure-file-upload)
+[github.com/CilginYazilim/secure-file-upload](https://github.com/CilginYazilim/secure-file-upload) · [📚 Örnek Kod Kütüphanesi](https://cilginyazilim.com/kutuphane)

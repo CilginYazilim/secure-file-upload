@@ -616,7 +616,7 @@ function find_file(PDO $db, int $id): ?array
  * parametresi olarak geçer (SQL enjeksiyonu savunması). Sıralama
  * sütunu ise parametre olamayacağı için BEYAZ LİSTEDEN seçilir.
  *
- * @param array{category?:string,period?:string,sort?:string} $filters
+ * @param array{category?:string,period?:string,sort?:string,search?:string} $filters
  */
 function fetch_files(PDO $db, array $filters = []): array
 {
@@ -627,6 +627,27 @@ function fetch_files(PDO $db, array $filters = []): array
     if (!empty($filters['category']) && in_array($filters['category'], ['image', 'document'], true)) {
         $where[]             = 'category = :category';
         $params[':category'] = $filters['category'];
+    }
+
+    /* ARAMA SÜZGECİ (dosya adında geçen metin)
+     * ---------------------------------------------------------------
+     * Aranan metin hazırlanmış ifade PARAMETRESİ olarak geçer, yani
+     * SQL'e gömülmez. Ama LIKE'ın kendi joker karakterleri (% ve _)
+     * parametre içinde de anlamlıdır: kullanıcı "%" yazarsa TÜM
+     * kayıtlar eşleşir, "_" yazarsa herhangi bir tek karakter
+     * eşleşir. Bu bir güvenlik açığı değildir ama sonucu YANLIŞ
+     * yapar. Bu yüzden joker karakterler ters bölü ile kaçırılır ve
+     * ESCAPE '\\' ile MySQL'e "bu kaçış karakterimdir" denir.
+     *
+     * Uzunluk sınırı: aşırı uzun bir desen tarama maliyetini
+     * gereksiz yere büyütür; 100 karakter fazlasıyla yeterlidir. */
+    $search = trim((string) ($filters['search'] ?? ''));
+
+    if ($search !== '') {
+        $search = mb_substr($search, 0, 100, 'UTF-8');
+
+        $where[]           = "original_name LIKE :search ESCAPE '\\\\'";
+        $params[':search'] = '%' . str_replace(['\\', '%', '_'], ['\\\\', '\\%', '\\_'], $search) . '%';
     }
 
     // Dönem süzgeci: "2026-08" biçimi. Kalıba uymayan değer yok sayılır.

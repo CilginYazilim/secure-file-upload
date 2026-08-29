@@ -25,10 +25,29 @@ var CyUpload = (function ($) {
     var pendingDeleteId = null;
     var deleteModal     = null;
     var settingsModal   = null;
+    var previewModal    = null;
+
+    // Aramanın "debounce" zamanlayıcısı (bkz. bindEvents).
+    var searchTimer = null;
 
     // Etkin süzgeçler. Sunucuya her listeleme isteğinde gönderilir;
     // filtreleme SQL tarafında yapılır (bkz. fetch_files()).
-    var filters = { category: '', period: '', sort: 'newest' };
+    var filters = { category: '', period: '', sort: 'newest', search: '' };
+
+    // Tarayıcı depolamasında kullanılan anahtarlar. Gizli sekmede
+    // localStorage erişimi HATA FIRLATABİLİR; bu yüzden her erişim
+    // try/catch içine alınır ve başarısızlık sessizce yutulur —
+    // görünüm tercihi uygulamanın çalışması için kritik değildir.
+    var STORE_THEME = 'cy-theme';
+    var STORE_VIEW  = 'cy-view';
+
+    function storeGet(key) {
+        try { return localStorage.getItem(key); } catch (e) { return null; }
+    }
+
+    function storeSet(key, value) {
+        try { localStorage.setItem(key, value); } catch (e) { /* yok say */ }
+    }
 
     /* =================================================================
      *  YARDIMCILAR
@@ -79,7 +98,8 @@ var CyUpload = (function ($) {
                 action:   'list',
                 category: filters.category,
                 period:   filters.period,
-                sort:     filters.sort
+                sort:     filters.sort,
+                search:   filters.search
             })
             .done(function (response) {
                 renderFiles(response.files);
@@ -153,7 +173,17 @@ var CyUpload = (function ($) {
         var $grid = $('#file_list').empty();
 
         if (files.length === 0) {
-            $grid.append($('<div>', { 'class': 'cy-file-grid__empty', text: 'Henüz dosya yüklenmedi.' }));
+            // Mesaj duruma göre değişir: süzgeç yüzünden mi boş, yoksa
+            // gerçekten hiç dosya mı yok? "Henüz dosya yüklenmedi"
+            // demek, aramada sonuç bulunamadığında YANILTICI olurdu.
+            var filtered = filters.search !== '' || filters.category !== '' || filters.period !== '';
+
+            $grid.append($('<div>', {
+                'class': 'cy-file-grid__empty',
+                text: filtered
+                    ? 'Bu süzgeçlere uyan dosya bulunamadı.'
+                    : 'Henüz dosya yüklenmedi.'
+            }));
             return;
         }
 
@@ -163,6 +193,19 @@ var CyUpload = (function ($) {
             var $thumb = $('<div>', { 'class': 'cy-file-card__thumb' }).appendTo($card);
 
             if (file.thumb_url) {
+                // Görseller tıklanabilir: büyük önizleme penceresini açar.
+                // Belgelerde önizleme yok, o yüzden yalnızca burada
+                // düğme rolü ve klavye erişimi veriyoruz.
+                $thumb.addClass('cy-file-card__thumb--clickable')
+                      .attr({ role: 'button', tabindex: 0,
+                              'aria-label': 'Önizle: ' + file.original_name })
+                      .data('preview', {
+                          url:  file.thumb_url,
+                          name: file.original_name,
+                          meta: file.size + ' · ' + file.uploaded_at,
+                          download: file.download_url
+                      });
+
                 $('<img>', { src: file.thumb_url, alt: file.original_name, loading: 'lazy' }).appendTo($thumb);
             } else {
                 $thumb.text(file.icon);
@@ -361,6 +404,61 @@ var CyUpload = (function ($) {
             handleFiles(files);
         });
 
+        /* --- Görsel önizleme (lightbox) --- */
+        $('#file_list').on('click', '.cy-file-card__thumb--clickable', function () {
+            openPreview($(this).data('preview'));
+        });
+
+        // Klavye erişilebilirliği: küçük resim bir <div role="button">
+        // olduğu için Enter/Space'i tarayıcı kendiliğinden yönetmez.
+        $('#file_list').on('keydown', '.cy-file-card__thumb--clickable', function (event) {
+            if (event.key === 'Enter' || event.key === ' ') {
+                event.preventDefault();
+                openPreview($(this).data('preview'));
+            }
+        });
+
+        /* --- Arama (debounce'lu) ---
+         * Her tuş vuruşunda istek atmak, 10 harflik bir aramada 10
+         * gereksiz sorgu demektir. 300 ms'lik duraklama beklenir;
+         * kullanıcı yazmayı bıraktığında TEK istek gider. */
+        $('#filter_search').on('input', function () {
+            var value = $(this).val();
+
+            $('#clear_search').prop('hidden', String(value) === '');
+
+            clearTimeout(searchTimer);
+            searchTimer = setTimeout(function () {
+                filters.search = String(value).trim();
+                loadFiles();
+            }, 300);
+        });
+
+        $('#clear_search').on('click', function () {
+            $('#filter_search').val('').trigger('input').trigger('focus');
+        });
+
+        /* --- Izgara / liste görünümü --- */
+        $('.cy-viewswitch').on('click', '[data-view]', function () {
+            applyView($(this).data('view'));
+        });
+
+        /* --- Tema anahtarı --- */
+        $('#toggle_theme').on('click', function () {
+            var current = document.documentElement.getAttribute('data-cy-theme');
+
+            // Kayıtlı bir tercih yoksa işletim sisteminin temasına
+            // bakıp ONUN TERSİNE geçiyoruz; aksi hâlde koyu temadaki
+            // bir kullanıcının ilk tıklaması hiçbir şey değiştirmezdi.
+            if (!current) {
+                current = window.matchMedia
+                    && window.matchMedia('(prefers-color-scheme: dark)').matches
+                    ? 'dark' : 'light';
+            }
+
+            applyTheme(current === 'dark' ? 'light' : 'dark');
+        });
+
         /* --- Silme --- */
         $('#file_list').on('click', '.js-delete', function () {
             var $card = $(this).closest('.cy-file-card');
@@ -417,6 +515,59 @@ var CyUpload = (function ($) {
                     pendingDeleteId = null;
                 });
         });
+    }
+
+
+    /* =================================================================
+     *  GÖRÜNÜM (tema / ızgara-liste / önizleme)
+     * ============================================================== */
+
+    /**
+     * Görsel önizleme penceresini açar.
+     *
+     * Kaynak URL sunucudan gelir ve uploads/ altını gösterir; o klasör
+     * .htaccess ile hem çalıştırmaya hem MIME tahminine kapalıdır.
+     * Metinler yine .text()/attr ile yazılır — dosya adı kullanıcı
+     * girdisidir.
+     */
+    function openPreview(data) {
+        if (!data) { return; }
+
+        $('#preview_image').attr({ src: data.url, alt: data.name });
+        $('#previewModalLabel').text(data.name);
+        $('#preview_meta').text(data.meta);
+        $('#preview_download').attr('href', data.download);
+
+        previewModal.show();
+    }
+
+    /** Izgara / liste görünümünü uygular ve tercihi saklar. */
+    function applyView(view) {
+        view = (view === 'list') ? 'list' : 'grid';
+
+        $('#file_list').toggleClass('cy-file-grid--list', view === 'list');
+
+        $('.cy-viewswitch [data-view]')
+            .removeClass('cy-chip--active')
+            .filter('[data-view="' + view + '"]')
+            .addClass('cy-chip--active');
+
+        storeSet(STORE_VIEW, view);
+    }
+
+    /** Açık/koyu temayı uygular ve tercihi saklar. */
+    function applyTheme(theme) {
+        theme = (theme === 'dark') ? 'dark' : 'light';
+
+        document.documentElement.setAttribute('data-cy-theme', theme);
+        storeSet(STORE_THEME, theme);
+
+        // Simge, BİR SONRAKİ duruma işaret eder: koyu temadayken
+        // "güneş" görünür, çünkü tıklayınca aydınlığa geçilecektir.
+        $('#theme_icon').text(theme === 'dark' ? '☀️' : '🌙');
+
+        // Mobil adres çubuğu rengi de temayla birlikte değişsin.
+        $('meta[name="theme-color"]').attr('content', theme === 'dark' ? '#070f1a' : '#0b5cb5');
     }
 
 
@@ -548,6 +699,30 @@ var CyUpload = (function ($) {
         $(function () {
             deleteModal   = new bootstrap.Modal(document.getElementById('deleteModal'));
             settingsModal = new bootstrap.Modal(document.getElementById('settingsModal'));
+            previewModal  = new bootstrap.Modal(document.getElementById('previewModal'));
+
+            // Saklanan tercihleri geri yükle. Tema zaten <head> içindeki
+            // erken betikle uygulanmıştır; burada yalnızca düğmenin
+            // simgesini doğru duruma getiriyoruz.
+            var savedTheme = storeGet(STORE_THEME);
+
+            if (savedTheme === 'dark' || savedTheme === 'light') {
+                applyTheme(savedTheme);
+            } else {
+                $('#theme_icon').text(
+                    window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches
+                        ? '☀️' : '🌙'
+                );
+            }
+
+            applyView(storeGet(STORE_VIEW) || 'grid');
+
+            // Modal kapanınca görseli bellekten düşür: büyük bir resim
+            // arka planda boşuna yüklü kalmasın.
+            $('#previewModal').on('hidden.bs.modal', function () {
+                $('#preview_image').attr('src', '');
+            });
+
             bindEvents();
             loadFiles();
         });
