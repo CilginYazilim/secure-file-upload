@@ -1,0 +1,59 @@
+# =====================================================================
+#  KÖK DİZİN KURALLARI
+#  cilginyazilim.com – Güvenli Dosya Yükleme
+# ---------------------------------------------------------------------
+#  Bu dosya alt klasörlere de MİRAS KALIR — buradaki güvenlik başlıkları
+#  assets/ ve system/ yanıtlarında da geçerlidir.
+#
+#  Nginx kullanıyorsanız bu dosya YOK SAYILIR; aynı korumaları sunucu
+#  bloğunuzda tanımlamanız gerekir (README'deki Nginx bölümüne bakın).
+# =====================================================================
+
+# ---------------------------------------------------------------------
+#  1) KLASÖR İÇERİĞİ LİSTELENMESİN
+# ---------------------------------------------------------------------
+#  index dosyası olmayan bir klasöre girildiğinde Apache varsayılan
+#  olarak dosya listesini basar. Saldırganın "burada ne var?" sorusunu
+#  bedavaya cevaplamanın gereği yok.
+Options -Indexes
+
+# Varsayılan giriş dosyası
+DirectoryIndex index.php
+
+# ---------------------------------------------------------------------
+#  2) ÇALIŞTIRILMAYAN DOSYALAR İNDİRİLEMESİN
+# ---------------------------------------------------------------------
+#  ÖLÇÜLEN SORUN: /cy_upload.sql adresi HTTP 200 ile veritabanı kurulum
+#  dosyasının tamamını indiriyordu — tablo yapısı ve örnek kayıtların
+#  tamamı dahil. Bu depoda veri uydurmadır, ama desen tehlikelidir:
+#  aynı düzenle canlıya alınan bir projede o dosya gerçek müşteri
+#  verisi taşır. Şema ve örnek veri KURULUM malzemesidir; web
+#  sunucusunun onları servis etmesi için hiçbir sebep yoktur.
+<FilesMatch "\.(sql|md|json|lock|log|ini|bak|dist|example|sh|swp)$">
+    Require all denied
+</FilesMatch>
+
+# Nokta ile başlayan dosyalar (.htaccess, .gitignore, .env …).
+<FilesMatch "^\.">
+    Require all denied
+</FilesMatch>
+
+# ---------------------------------------------------------------------
+#  3) GÜVENLİK BAŞLIKLARI
+# ---------------------------------------------------------------------
+<IfModule mod_headers.c>
+    # Tarayıcı Content-Type'ı tahmin etmeye çalışmasın.
+    Header always set X-Content-Type-Options "nosniff"
+
+    # Sayfa başka bir sitenin çerçevesine gömülmesin: görünmez bir
+    # çerçeveye alınmış arayüzde kullanıcıya farkında olmadan tehlikeli
+    # bir düğme tıklatılabilir (clickjacking).
+    Header always set X-Frame-Options "SAMEORIGIN"
+
+    # Dış sitelere giderken tam URL yerine yalnızca alan adı gönderilsin.
+    Header always set Referrer-Policy "strict-origin-when-cross-origin"
+
+    # Bu sayfanın ihtiyacı olmayan tarayıcı yetenekleri kapatılsın.
+    Header always set Permissions-Policy "geolocation=(), microphone=(), camera=()"
+</IfModule>
+
