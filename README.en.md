@@ -8,7 +8,7 @@ A PHP file upload example built on **layered security**.
 Drag & drop · Progress bars · Type/date foldering · Download counter · Configurable type whitelist
 Search · Grid/list view · Image lightbox · Light/dark theme · **Mobile-friendly UI**
 
-**[cilginyazilim.com](https://cilginyazilim.com)** · MIT License · Version **1.1.0**
+**[cilginyazilim.com](https://cilginyazilim.com)** · MIT License · Version **1.2.0**
 
 **[📚 Code Library](https://cilginyazilim.com/kutuphane)** · [This application's page](https://cilginyazilim.com/kutuphane/uygulama/secure-file-upload/)
 
@@ -233,6 +233,7 @@ max_bytes=8388608  max_files=10            ← clamped to the ceiling
 ```
 secure-file-upload/
 ├── index.php                  ← UI: drag & drop, search, filters, summary, settings + lightbox modals
+├── .env.example               ← Database credentials (optional) — in .gitignore
 ├── cy_upload.sql              ← Database setup (files + settings tables)
 │
 ├── system/
@@ -513,7 +514,20 @@ git clone https://github.com/CilginYazilim/secure-file-upload.git
 mysql -u root -p < secure-file-upload/cy_upload.sql
 ```
 
-Edit the `DB_*` lines in `system/config.php` or set environment variables (`DB_HOST`, `DB_NAME`, `DB_USER`, `DB_PASS`).
+> **Optional — your own database credentials:** run
+> `cp .env.example .env` (Windows: `copy .env.example .env`) and fill in the
+> `DB_*` lines. It runs without the file too; the defaults match a local XAMPP
+> install (`root`, empty password). `.env` is in `.gitignore`, so your password
+> never reaches the repository.
+
+Put the database credentials in a `.env` file at the repository root; you never
+need to touch `system/config.php`:
+
+```bash
+cp .env.example .env        # Windows: copy .env.example .env
+```
+
+See [Environment variables](#environment-variables) below for the details.
 
 Then open **http://localhost/secure-file-upload/**
 

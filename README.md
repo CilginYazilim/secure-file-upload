@@ -8,7 +8,7 @@ PHP ile **katmanlı güvenlik** uygulanmış dosya yükleme örneği.
 Sürükle-bırak · İlerleme çubuğu · Tür/tarih klasörleme · İndirme sayacı · Ayarlanabilir tür beyaz listesi
 Arama · Izgara/liste görünümü · Görsel önizleme · Açık/koyu tema · **Mobil uyumlu arayüz**
 
-**[cilginyazilim.com](https://cilginyazilim.com)** · MIT Lisansı · Sürüm **1.1.0**
+**[cilginyazilim.com](https://cilginyazilim.com)** · MIT Lisansı · Sürüm **1.2.0**
 
 **[📚 Örnek Kod Kütüphanesi](https://cilginyazilim.com/kutuphane)** · [Bu uygulamanın sayfası](https://cilginyazilim.com/kutuphane/uygulama/secure-file-upload/)
 
@@ -231,6 +231,7 @@ max_bytes=8388608  max_files=10            ← tavana kelepçelendi
 ```
 secure-file-upload/
 ├── index.php                  ← Arayüz: sürükle-bırak, arama, süzgeçler, özet, ayarlar + önizleme pencereleri
+├── .env.example               ← Veritabanı bilgileri (isteğe bağlı) — .gitignore içinde
 ├── cy_upload.sql              ← Veritabanı kurulumu (files + settings tabloları)
 │
 ├── system/
@@ -511,7 +512,20 @@ git clone https://github.com/CilginYazilim/secure-file-upload.git
 mysql -u root -p < secure-file-upload/cy_upload.sql
 ```
 
-`system/config.php` içindeki `DB_*` satırlarını düzenleyin veya ortam değişkeni tanımlayın (`DB_HOST`, `DB_NAME`, `DB_USER`, `DB_PASS`).
+> **İsteğe bağlı — kendi veritabanı bilgileriniz:**
+> `cp .env.example .env` (Windows: `copy .env.example .env`) deyip `DB_*`
+> satırlarını doldurun. Bu dosya olmadan da çalışır; varsayılanlar yerel bir
+> XAMPP kurulumuna (`root`, boş parola) göredir. `.env` `.gitignore`
+> içindedir — parolanız depoya gitmez.
+
+Veritabanı bilgilerini depo kökündeki `.env` dosyasına yazın; `system/config.php`
+dosyasına dokunmanız gerekmez:
+
+```bash
+cp .env.example .env        # Windows: copy .env.example .env
+```
+
+Ayrıntı için aşağıdaki [Ortam değişkenleri](#ortam-değişkenleri) bölümüne bakın.
 
 Ardından: **http://localhost/secure-file-upload/**
 
